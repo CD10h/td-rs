@@ -20,6 +20,32 @@ enum NtscUseField {
     Both,
 }
 
+impl From<UseField> for NtscUseField {
+    fn from(value: UseField) -> Self {
+        match value {
+            UseField::Alternating => Self::Alternating,
+            UseField::Upper => Self::UpperOnly,
+            UseField::Lower => Self::LowerOnly,
+            UseField::Both => Self::Both,
+            UseField::InterleavedUpper => Self::InterleavedUpper,
+            UseField::InterleavedLower => Self::InterleavedLower,
+        }
+    }
+}
+
+impl From<NtscUseField> for UseField {
+    fn from(value: NtscUseField) -> Self {
+        match value {
+            NtscUseField::Alternating => Self::Alternating,
+            NtscUseField::UpperOnly => Self::Upper,
+            NtscUseField::LowerOnly => Self::Lower,
+            NtscUseField::InterleavedUpper => Self::InterleavedUpper,
+            NtscUseField::InterleavedLower => Self::InterleavedLower,
+            NtscUseField::Both => Self::Both,
+        }
+    }
+}
+
 #[derive(Param, Default, Clone, Debug)]
 enum NtscLowPassType {
     #[default]
@@ -34,13 +60,34 @@ enum NtscInputLumaFilter {
     Box,
     None,
 }
+
 #[derive(Param, Default, Clone, Debug)]
-enum NtscChromaLowPassIn {
+enum NtscChromaLowPass {
     #[default]
     Full,
     Light,
     None,
 }
+
+impl From<NtscChromaLowPass> for ChromaLowpass {
+    fn from(value: NtscChromaLowPass) -> Self {
+        match value {
+            NtscChromaLowPass::Full => Self::Full,
+            NtscChromaLowPass::Light => Self::Light,
+            NtscChromaLowPass::None => Self::None,
+        }
+    }
+}
+impl From<ChromaLowpass> for NtscChromaLowPass {
+    fn from(value: ChromaLowpass) -> Self {
+        match value {
+            ChromaLowpass::None => Self::None,
+            ChromaLowpass::Light => Self::Light,
+            ChromaLowpass::Full => Self::Full,
+        }
+    }
+}
+
 #[derive(Param, Default, Clone, Debug)]
 enum NtscScanlinePhaseShift {
     #[default]
@@ -49,6 +96,7 @@ enum NtscScanlinePhaseShift {
     Degrees180,
     Degrees270,
 }
+
 #[derive(Param, Default, Clone, Debug)]
 enum NtsChromaDemod {
     #[default]
@@ -57,6 +105,29 @@ enum NtsChromaDemod {
     OneLineComb,
     TwoLineComb,
 }
+
+impl From<ChromaDemodulationFilter> for NtsChromaDemod {
+    fn from(value: ChromaDemodulationFilter) -> Self {
+        match value {
+            ChromaDemodulationFilter::Box => Self::Box,
+            ChromaDemodulationFilter::Notch => Self::Notch,
+            ChromaDemodulationFilter::OneLineComb => Self::OneLineComb,
+            ChromaDemodulationFilter::TwoLineComb => Self::TwoLineComb,
+        }
+    }
+}
+
+impl From<NtsChromaDemod> for ChromaDemodulationFilter {
+    fn from(value: NtsChromaDemod) -> Self {
+        match value {
+            NtsChromaDemod::Box => Self::Box,
+            NtsChromaDemod::Notch => Self::Notch,
+            NtsChromaDemod::OneLineComb => Self::OneLineComb,
+            NtsChromaDemod::TwoLineComb => Self::TwoLineComb,
+        }
+    }
+}
+
 #[derive(Param, Default, Clone, Debug)]
 enum NtscVhsTapeSpeed {
     #[default]
@@ -236,14 +307,7 @@ impl From<NtscEffect> for NtscAllParams {
         Self {
             random_seed: value.random_seed,
             bandwidth_scale: value.bandwidth_scale,
-            use_field: match value.use_field {
-                UseField::Alternating => NtscUseField::Alternating,
-                UseField::Upper => NtscUseField::UpperOnly,
-                UseField::Lower => NtscUseField::LowerOnly,
-                UseField::Both => NtscUseField::Both,
-                UseField::InterleavedUpper => NtscUseField::InterleavedUpper,
-                UseField::InterleavedLower => NtscUseField::InterleavedLower,
-            },
+            use_field: value.use_field.into(),
             low_pass_type: match value.filter_type {
                 FilterType::ConstantK => NtscLowPassType::ConstantK,
                 FilterType::Butterworth => NtscLowPassType::Butterworth,
@@ -253,11 +317,7 @@ impl From<NtscEffect> for NtscAllParams {
                 LumaLowpass::Box => NtscInputLumaFilter::Box,
                 LumaLowpass::Notch => NtscInputLumaFilter::Notch,
             },
-            input_chroma_lowpass: match value.chroma_lowpass_in {
-                ChromaLowpass::None => NtscChromaLowPassIn::None,
-                ChromaLowpass::Light => NtscChromaLowPassIn::Light,
-                ChromaLowpass::Full => NtscChromaLowPassIn::Full,
-            },
+            input_chroma_lowpass: value.chroma_lowpass_in.into(),
             composite_preemphasis: value.composite_preemphasis,
             composite_noise: value.composite_noise_intensity,
             snow: value.snow_intensity,
@@ -269,12 +329,7 @@ impl From<NtscEffect> for NtscAllParams {
                 PhaseShift::Degrees270 => NtscScanlinePhaseShift::Degrees270,
             },
             scanline_phase_shift_offset: value.video_scanline_phase_shift_offset,
-            chroma_demod_filter: match value.chroma_demodulation {
-                ChromaDemodulationFilter::Box => NtsChromaDemod::Box,
-                ChromaDemodulationFilter::Notch => NtsChromaDemod::Notch,
-                ChromaDemodulationFilter::OneLineComb => NtsChromaDemod::OneLineComb,
-                ChromaDemodulationFilter::TwoLineComb => NtsChromaDemod::TwoLineComb,
-            },
+            chroma_demod_filter: value.chroma_demodulation.into(),
             luma_smear: value.luma_smear,
             head_switching_enable: head_switching_enable,
             head_switching_height: head_switching_height,
@@ -310,11 +365,7 @@ impl From<NtscEffect> for NtscAllParams {
             vhs_edge_wave_frequency: vhs_edge_wave_frequency,
             vhs_edge_wave_detail: vhs_edge_wave_detail,
             vertically_blend_chroma: value.chroma_vert_blend,
-            chroma_low_pass_out: match value.chroma_lowpass_out {
-                ChromaLowpass::None => NtscChromaLowPassOut::None,
-                ChromaLowpass::Light => NtscChromaLowPassOut::Light,
-                ChromaLowpass::Full => NtscChromaLowPassOut::Full,
-            },
+            chroma_low_pass_out: value.chroma_lowpass_out.into(),
         }
     }
 }
@@ -324,14 +375,7 @@ impl From<NtscAllParams> for NtscEffect {
         let mut fx = NtscEffect::default();
 
         fx.random_seed = value.random_seed;
-        fx.use_field = match value.use_field {
-            NtscUseField::Alternating => UseField::Alternating,
-            NtscUseField::UpperOnly => UseField::Upper,
-            NtscUseField::LowerOnly => UseField::Lower,
-            NtscUseField::InterleavedUpper => UseField::InterleavedUpper,
-            NtscUseField::InterleavedLower => UseField::InterleavedLower,
-            NtscUseField::Both => UseField::Both,
-        };
+        fx.use_field = value.use_field.into();
         fx.filter_type = match value.low_pass_type {
             NtscLowPassType::ConstantK => FilterType::ConstantK,
             NtscLowPassType::Butterworth => FilterType::Butterworth,
@@ -341,17 +385,8 @@ impl From<NtscAllParams> for NtscEffect {
             NtscInputLumaFilter::Box => LumaLowpass::Box,
             NtscInputLumaFilter::None => LumaLowpass::None,
         };
-        fx.chroma_lowpass_in = match value.input_chroma_lowpass {
-            NtscChromaLowPassIn::Full => ChromaLowpass::Full,
-            NtscChromaLowPassIn::Light => ChromaLowpass::Light,
-            NtscChromaLowPassIn::None => ChromaLowpass::None,
-        };
-        fx.chroma_demodulation = match value.chroma_demod_filter {
-            NtsChromaDemod::Box => ChromaDemodulationFilter::Box,
-            NtsChromaDemod::Notch => ChromaDemodulationFilter::Notch,
-            NtsChromaDemod::OneLineComb => ChromaDemodulationFilter::OneLineComb,
-            NtsChromaDemod::TwoLineComb => ChromaDemodulationFilter::TwoLineComb,
-        };
+        fx.chroma_lowpass_in = value.input_chroma_lowpass.into();
+        fx.chroma_demodulation = value.chroma_demod_filter.into();
         fx.luma_smear = value.luma_smear;
         fx.composite_preemphasis = value.composite_preemphasis;
         fx.video_scanline_phase_shift = match value.scanline_phase_shift {
@@ -432,24 +467,20 @@ impl From<NtscAllParams> for NtscEffect {
             None
         };
         fx.chroma_vert_blend = value.vertically_blend_chroma;
-        fx.chroma_lowpass_out = match value.chroma_low_pass_out {
-            NtscChromaLowPassOut::Full => ChromaLowpass::Full,
-            NtscChromaLowPassOut::Light => ChromaLowpass::Light,
-            NtscChromaLowPassOut::None => ChromaLowpass::None,
-        };
+        fx.chroma_lowpass_out = value.chroma_low_pass_out.into();
         fx.bandwidth_scale = value.bandwidth_scale;
         fx
     }
 }
 
-#[derive(Params, Default, Clone, Debug)]
+#[derive(Params, Clone, Debug)]
 pub(crate) struct NtscAllParams {
     random_seed: i32,
     bandwidth_scale: f32,
     use_field: NtscUseField,
     low_pass_type: NtscLowPassType,
     input_luma_filter: NtscInputLumaFilter,
-    input_chroma_lowpass: NtscChromaLowPassIn,
+    input_chroma_lowpass: NtscChromaLowPass,
 
     composite_preemphasis: f32,
     composite_noise: f32,
@@ -510,18 +541,11 @@ pub(crate) struct NtscAllParams {
 
     vertically_blend_chroma: bool,
 
-    chroma_low_pass_out: NtscChromaLowPassOut,
+    chroma_low_pass_out: NtscChromaLowPass,
 }
-//     SettingDescriptor {
-//         label: "Vertically blend chroma",
-//         description: Some("Vertically blend each scanline's chrominance with the scanline above it."),
-//         kind: SettingKind::Boolean { default_value: default_settings.chroma_vert_blend },
-//         id: SettingID::CHROMA_VERT_BLEND
-//     },
-#[derive(Param, Default, Clone, Debug)]
-enum NtscChromaLowPassOut {
-    #[default]
-    Full,
-    Light,
-    None,
+
+impl Default for NtscAllParams {
+    fn default() -> Self {
+        NtscEffect::default().into()
+    }
 }

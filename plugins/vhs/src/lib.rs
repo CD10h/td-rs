@@ -3,17 +3,12 @@
 mod ntsc_settings;
 mod settingconverter;
 
-use image::{DynamicImage, ImageBuffer, RgbImage, Rgba32FImage};
+use image::{DynamicImage, RgbImage};
 use ntsc_settings::NtscAllParams;
-use ntscrs::ntsc::{NtscEffect, NtscEffectFullSettings};
-use ntscrs::yiq_fielding::{Bgrx8, BlitInfo, Rgb8, Rgbx8, YiqField, YiqOwned, YiqView};
+use ntscrs::ntsc::{NtscEffect};
+use ntscrs::yiq_fielding::{Bgrx8, Rgbx32f, Rgbx8, YiqField, YiqOwned, YiqView};
 
-use std::convert::identity;
-use std::f16;
 use std::mem::size_of;
-use std::path::PathBuf;
-use std::sync::mpsc::{Receiver, SyncSender, TryRecvError, TrySendError};
-use std::thread::JoinHandle;
 use td_rs_top::*;
 
 /// Struct representing our SOP's state
@@ -111,7 +106,7 @@ impl Op for NTSCTop {
 //     Some(DynamicImage::ImageRgba32F(decoded_img).into_rgb8())
 // }
 
-fn td_top_to_yiq_owned(top_dl: &mut TopDownloadResult, field: YiqField) -> Option<YiqOwned> {
+fn td_top_to_yiq_owned(mut top_dl: TopDownloadResult, field: YiqField) -> Option<YiqOwned> {
     let tex_desc = top_dl.texture_desc();
 
     let width = tex_desc.width;
@@ -125,7 +120,7 @@ fn td_top_to_yiq_owned(top_dl: &mut TopDownloadResult, field: YiqField) -> Optio
     let (y, iq) = data.split_at_mut(num_pixels);
     let (i, q) = iq.split_at_mut(num_pixels);
 
-    let mut view = YiqView {
+    let view = YiqView {
         y,
         i,
         q,
@@ -136,21 +131,27 @@ fn td_top_to_yiq_owned(top_dl: &mut TopDownloadResult, field: YiqField) -> Optio
     let res = match tex_desc.pixel_format {
         PixelFormat::BGRA8Fixed => Some(YiqOwned::from_strided_buffer::<Bgrx8>(
             top_dl.data(),
-            width * 3,
+            width * 4 * size_of::<u8>(),
             width,
             height,
             field,
         )),
         PixelFormat::RGBA8Fixed => Some(YiqOwned::from_strided_buffer::<Rgbx8>(
             top_dl.data(),
-            width * 3,
+            width * 4 * size_of::<u8>(),
+            width,
+            height,
+            field,
+        )),
+        PixelFormat::RGBA32Float => Some(YiqOwned::from_strided_buffer::<Rgbx32f>(
+            top_dl.data(),
+            width * 4 * size_of::<f32>(),
             width,
             height,
             field,
         )),
         _ => None, // PixelFormat::RGBA16Fixed => todo!(),
                    // PixelFormat::RGBA16Float => todo!(),
-                   // PixelFormat::RGBA32Float => todo!(),
                    // PixelFormat::Mono8Fixed => todo!(),
                    // PixelFormat::Mono16Fixed => todo!(),
                    // PixelFormat::Mono16Float => todo!(),
@@ -197,23 +198,25 @@ impl Top for NTSCTop {
         };
         self.set_warning("");
         let mut downloaded = vid_input.download_texture(DownloadOptions::default());
+        let tex_desc = downloaded.texture_desc();
         //effect goes here
         let effect: NtscEffect = self.params.clone().into();
 
         let immg = {
             if let Some(mut yiq_own) = td_top_to_yiq_owned(
-                &mut downloaded,
+                downloaded,
                 effect.use_field.to_yiq_field(self.execute_count),
             ) {
                 let mut view = YiqView::from(&mut yiq_own);
 
+                effect.apply_effect_to_yiq(&mut view, self.execute_count);
                 RgbImage::from(&view)
-                // effect.apply_effect_to_yiq(&mut view, self.execute_count);
             } else {
                 self.set_error("Unsupported pixel format");
                 return;
             }
         };
+        self.set_error("");
 
         // match downloaded.texture_desc().pixel_format {
         //     PixelFormat::RGBA32Float => {
@@ -244,7 +247,7 @@ impl Top for NTSCTop {
                 width: width,
                 height: height,
                 pixel_format: PixelFormat::RGBA8Fixed,
-                ..downloaded.texture_desc()
+                ..tex_desc
             },
             first_pixel: FirstPixel::TopLeft,
             color_buffer_index: 0,
