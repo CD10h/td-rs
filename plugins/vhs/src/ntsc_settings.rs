@@ -331,39 +331,39 @@ impl From<NtscEffect> for NtscAllParams {
             scanline_phase_shift_offset: value.video_scanline_phase_shift_offset,
             chroma_demod_filter: value.chroma_demodulation.into(),
             luma_smear: value.luma_smear,
-            head_switching_enable: head_switching_enable,
-            head_switching_height: head_switching_height,
-            head_switching_offset: head_switching_offset,
+            head_switching_enable,
+            head_switching_height,
+            head_switching_offset,
             head_switching_horizontal_shift,
-            tracking_noise_enable: tracking_noise_enable,
-            tracking_noise_height: tracking_noise_height,
-            tracking_noise_wave_intensity: tracking_noise_wave_intensity,
-            tracking_noise_snow_intensity: tracking_noise_snow_intensity,
-            tracking_noise_snow_anisotropy: tracking_noise_snow_anisotropy,
-            tracking_noise_noise_intensity: tracking_noise_noise_intensity,
-            ringing_enable: ringing_enable,
-            ringing_frequency: ringing_frequency,
-            ringing_power: ringing_power,
-            ringing_scale: ringing_scale,
-            chroma_noise_enable: chroma_noise_enable,
-            chroma_noise_intensity: chroma_noise_intensity,
-            chroma_noise_frequency: chroma_noise_frequency,
-            chroma_noise_detail: chroma_noise_detail,
+            tracking_noise_enable,
+            tracking_noise_height,
+            tracking_noise_wave_intensity,
+            tracking_noise_snow_intensity,
+            tracking_noise_snow_anisotropy,
+            tracking_noise_noise_intensity,
+            ringing_enable,
+            ringing_frequency,
+            ringing_power,
+            ringing_scale,
+            chroma_noise_enable,
+            chroma_noise_intensity,
+            chroma_noise_frequency,
+            chroma_noise_detail,
             chroma_phase_error: value.chroma_phase_error,
             chroma_phase_noise: value.chroma_phase_noise_intensity,
             chroma_delay_horizontal: value.chroma_delay.0,
             chroma_delay_vertical: value.chroma_delay.1,
-            vhs_enable: vhs_enable,
-            vhs_tape_speed: vhs_tape_speed,
-            vhs_chroma_loss: vhs_chroma_loss,
-            vhs_sharpen_enable: vhs_sharpen_enable,
-            vhs_sharpen_intensity: vhs_sharpen_intensity,
-            vhs_sharpen_frequency: vhs_sharpen_frequency,
-            vhs_edge_wav_enable: vhs_edge_wav_enable,
-            vhs_edge_wave_intensity: vhs_edge_wave_intensity,
-            vhs_edge_wave_speed: vhs_edge_wave_speed,
-            vhs_edge_wave_frequency: vhs_edge_wave_frequency,
-            vhs_edge_wave_detail: vhs_edge_wave_detail,
+            vhs_enable,
+            vhs_tape_speed,
+            vhs_chroma_loss,
+            vhs_sharpen_enable,
+            vhs_sharpen_intensity,
+            vhs_sharpen_frequency,
+            vhs_edge_wav_enable,
+            vhs_edge_wave_intensity,
+            vhs_edge_wave_speed,
+            vhs_edge_wave_frequency,
+            vhs_edge_wave_detail,
             vertically_blend_chroma: value.chroma_vert_blend,
             chroma_low_pass_out: value.chroma_lowpass_out.into(),
         }
@@ -473,70 +473,118 @@ impl From<NtscAllParams> for NtscEffect {
     }
 }
 
+// let mut label = None;
+// let mut page = None;
+// let mut min = None;
+// let mut max = None;
+// let mut min_slider = None;
+// let mut max_slider = None;
+// let mut clamp = None;
+// let mut default = None;
+
 #[derive(Params, Clone, Debug)]
 pub(crate) struct NtscAllParams {
+    #[param(min_slider=i32::MIN, max_slider= i32::MIN)]
     random_seed: i32,
+
+    #[param(min_slider = 0.125, max_slider = 8.0)]
     bandwidth_scale: f32,
+
     use_field: NtscUseField,
     low_pass_type: NtscLowPassType,
     input_luma_filter: NtscInputLumaFilter,
     input_chroma_lowpass: NtscChromaLowPass,
 
+    #[param(max_slider = 2.0)]
     composite_preemphasis: f32,
+
     composite_noise: f32,
+    #[param(max_slider = 100.0)]
     snow: f32,
     snow_anisotropy: f32,
 
     scanline_phase_shift: NtscScanlinePhaseShift,
+    #[param(max_slider = 4)]
     scanline_phase_shift_offset: i32,
 
     chroma_demod_filter: NtsChromaDemod,
     luma_smear: f32,
 
     //GROUP: Head switching
+    #[param(page = "Head Switching")]
     head_switching_enable: bool,
+    #[param(page = "Head Switching", max_slider = 24)]
     head_switching_height: u32,
+    #[param(page = "Head Switching", max_slider = 24)]
     head_switching_offset: u32,
+    #[param(page = "Head Switching", min_slider=-100.0, max_slider=100.0)]
     head_switching_horizontal_shift: f32,
 
     //GROUP: Tracking noise
+    #[param(page = "Tracking noise")]
     tracking_noise_enable: bool,
+    #[param(page = "Tracking noise", max_slider = 120)]
     tracking_noise_height: u32,
+    #[param(page = "Tracking noise", min_slider=-50.0, max_slider=50.0)]
     tracking_noise_wave_intensity: f32,
+    #[param(page = "Tracking noise")]
     tracking_noise_snow_intensity: f32,
+    #[param(page = "Tracking noise")]
     tracking_noise_snow_anisotropy: f32,
+    #[param(page = "Tracking noise")]
     tracking_noise_noise_intensity: f32,
 
     //GROUP: Ringing
+    #[param(page = "Ringing")]
     ringing_enable: bool,
+    #[param(page = "Ringing")]
     ringing_frequency: f32,
+    #[param(page = "Ringing", min_slider = 1.0, max_slider = 10.0)]
     ringing_power: f32,
+    #[param(page = "Ringing", max_slider = 10.0)]
     ringing_scale: f32,
 
     //GROUP: chroma noise
+    #[param(page = "Chroma noise")]
     chroma_noise_enable: bool,
+    #[param(page = "Chroma noise")]
     chroma_noise_intensity: f32,
+    #[param(page = "Chroma noise", max_slider = 0.5)]
     chroma_noise_frequency: f32,
+    #[param(page = "Chroma noise", min_slider = 1, max_slider = 5)]
     chroma_noise_detail: u32,
 
     chroma_phase_error: f32,
     chroma_phase_noise: f32,
+    #[param(min_slider=-40.0, max_slider=40.0)]
     chroma_delay_horizontal: f32,
+    #[param(min_slider=-20, max_slider=20)]
     chroma_delay_vertical: i32,
 
-    ///GROUP: VHS emulation
+    //GROUP: VHS emulation
+    #[param(page = "VHS Emulation")]
     vhs_enable: bool,
+    #[param(page = "VHS Emulation")]
     vhs_tape_speed: NtscVhsTapeSpeed,
+    #[param(page = "VHS Emulation")]
     vhs_chroma_loss: f32,
     //SUBGROUP: Sharpen
+    #[param(page = "VHS Emulation")]
     vhs_sharpen_enable: bool,
+    #[param(page = "VHS Emulation", max_slider = 5.0)]
     vhs_sharpen_intensity: f32,
+    #[param(page = "VHS Emulation", min_slider = 0.5, max_slider = 4.0)]
     vhs_sharpen_frequency: f32,
     //SUBGROUP: Edge wave
+    #[param(page = "VHS Emulation")]
     vhs_edge_wav_enable: bool,
+    #[param(page = "VHS Emulation", max_slider = 20.0)]
     vhs_edge_wave_intensity: f32,
+    #[param(page = "VHS Emulation", max_slider = 10.0)]
     vhs_edge_wave_speed: f32,
+    #[param(page = "VHS Emulation", max_slider = 0.5)]
     vhs_edge_wave_frequency: f32,
+    #[param(page = "VHS Emulation", min_slider = 1, max_slider = 5)]
     vhs_edge_wave_detail: i32,
 
     vertically_blend_chroma: bool,
