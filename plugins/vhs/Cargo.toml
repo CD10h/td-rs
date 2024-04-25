@@ -13,6 +13,5 @@ crate-type = ["staticlib"]
 [dependencies]
 td-rs-top = { path = "../../td-rs-top" }
 td-rs-derive = { path = "../../td-rs-derive" }
-bytemuck = "1.14"
 ntscrs = { git = "https://github.com/valadaptive/ntsc-rs" }
 image = "0.24.9"
